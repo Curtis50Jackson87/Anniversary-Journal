@@ -1,44 +1,67 @@
-// Save journal entry
-document.getElementById('entryForm').addEventListener('submit', function (e) {
-  e.preventDefault();
-  
-  const title = document.getElementById('title').value.trim();
-  const content = document.getElementById('content').value.trim();
+function saveEntry() {
+  const text = document.getElementById("entry").value;
+  const editIndex = document.getElementById("entry").dataset.editIndex;
 
-  if (title && content) {
-    const entry = {
-      title,
-      content,
-      date: new Date().toLocaleString()
-    };
+  if (!text.trim()) return;
 
-    let entries = JSON.parse(localStorage.getItem('journalEntries')) || [];
-    entries.unshift(entry); // latest first
-    localStorage.setItem('journalEntries', JSON.stringify(entries));
+  let entries = JSON.parse(localStorage.getItem("journalEntries")) || [];
 
-    document.getElementById('entryForm').reset();
-    displayEntries();
+  if (editIndex !== undefined && editIndex !== "") {
+    entries[editIndex].text = text;
+    entries[editIndex].date = new Date().toLocaleString();
+    document.getElementById("entry").dataset.editIndex = "";
+  } else {
+    entries.push({ text: text, date: new Date().toLocaleString() });
   }
-});
 
-// Display saved entries
+  localStorage.setItem("journalEntries", JSON.stringify(entries));
+  document.getElementById("entry").value = "";
+  displayEntries();
+}
+
 function displayEntries() {
-  const entries = JSON.parse(localStorage.getItem('journalEntries')) || [];
-  const container = document.getElementById('entries');
-  container.innerHTML = '';
+  const sortOrder = document.getElementById("sortOrder")?.value || "newest";
+  const entries = JSON.parse(localStorage.getItem("journalEntries")) || [];
+  const entriesList = document.getElementById("entries");
+  entriesList.innerHTML = "";
 
-  if (entries.length === 0) {
-    container.innerHTML = '<p>No entries yet.</p>';
-    return;
+  const sortedEntries = [...entries];
+  if (sortOrder === "newest") {
+    sortedEntries.reverse();
   }
 
-  entries.forEach(entry => {
-    const div = document.createElement('div');
-    div.className = 'entry';
-    div.innerHTML = `<h3>${entry.title}</h3><small>${entry.date}</small><p>${entry.content}</p>`;
-    container.appendChild(div);
+  sortedEntries.forEach((entry, i) => {
+    const actualIndex = sortOrder === "newest" ? entries.length - 1 - i : i;
+
+    const li = document.createElement("li");
+    li.innerHTML = `
+      <strong>${entry.date}</strong><br>${entry.text}
+      <div class="buttons">
+        <button onclick="editEntry(${actualIndex})">Edit</button>
+        <button onclick="deleteEntry(${actualIndex})">Delete</button>
+      </div>
+    `;
+    entriesList.appendChild(li);
   });
 }
 
-// On page load
+
+function deleteEntry(index) {
+  const confirmDelete = confirm("Are you sure you want to delete this entry?");
+  if (!confirmDelete) return;
+
+  let entries = JSON.parse(localStorage.getItem("journalEntries")) || [];
+  entries.splice(index, 1);
+  localStorage.setItem("journalEntries", JSON.stringify(entries));
+  displayEntries();
+}
+
+
+function editEntry(index) {
+  const entries = JSON.parse(localStorage.getItem("journalEntries")) || [];
+  document.getElementById("entry").value = entries[index].text;
+  document.getElementById("entry").dataset.editIndex = index;
+}
+
 window.onload = displayEntries;
+s;
